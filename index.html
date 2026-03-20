@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AP Vila Monteiro 🏠</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f0f13;--surface:#18181f;--card:#1e1e28;--border:#2e2e3e;
+    --accent:#7c6df0;--accent2:#f0a26d;--danger:#f06d6d;
+    --text:#e8e8f0;--muted:#7070a0;--green:#4ade80;--yellow:#facc15;--red:#f87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;padding:0 0 80px}
+
+  .header{background:linear-gradient(135deg,#1a1a28,#0f0f1a);border-bottom:1px solid var(--border);padding:22px 32px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px)}
+  .header-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.35rem}
+  .header-sub{font-size:.63rem;color:var(--muted);margin-top:2px;letter-spacing:.1em}
+  .badge{color:#fff;font-family:'Syne',sans-serif;font-size:.63rem;font-weight:700;padding:4px 12px;border-radius:20px;transition:background .3s}
+
+  .tabs{display:flex;gap:3px;padding:14px 32px 0;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto}
+  .tab{padding:9px 16px;border:none;background:none;color:var(--muted);font-family:'Syne',sans-serif;font-weight:600;font-size:.76rem;cursor:pointer;border-radius:8px 8px 0 0;transition:all .2s;letter-spacing:.04em;border-bottom:2px solid transparent;white-space:nowrap}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(124,109,240,.08)}
+  .tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.03)}
+
+  .panel{display:none;padding:26px 32px}
+  .panel.active{display:block;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:16px}
+  .g2{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin-bottom:16px}
+  @media(max-width:700px){.g3,.g2{grid-template-columns:1fr}.header,.panel{padding:16px 16px}.tabs{padding:10px 16px 0}}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:17px 19px;transition:border-color .2s}
+  .card:hover{border-color:rgba(124,109,240,.3)}
+
+  /* BIG HERO CARD */
+  .hero-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 26px;margin-bottom:16px;display:flex;gap:0;overflow:hidden;position:relative}
+  .hero-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,109,240,.06),transparent);pointer-events:none}
+  .hero-left{flex:1;border-right:1px solid var(--border);padding-right:24px;margin-right:24px}
+  .hero-right{flex:1}
+  .hero-label{font-size:.61rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+  .hero-value{font-family:'Syne',sans-serif;font-size:2.8rem;font-weight:800;line-height:1}
+  .hero-value.green{color:var(--green)}.hero-value.yellow{color:var(--yellow)}.hero-value.red{color:var(--red)}
+  .hero-sub{font-size:.7rem;color:var(--muted);margin-top:6px;line-height:1.5}
+  .hero-divider{height:1px;background:var(--border);margin:14px 0}
+  .hero-row{display:flex;justify-content:space-between;align-items:center;font-size:.74rem;padding:3px 0}
+  .hero-row .hn{color:var(--muted)}.hero-row .hv{font-family:'Syne',sans-serif;font-weight:700}
+  @media(max-width:700px){.hero-card{flex-direction:column}.hero-left{border-right:none;border-bottom:1px solid var(--border);padding-right:0;padding-bottom:16px;margin-right:0;margin-bottom:16px}}
+
+  .cl{font-size:.61rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+  .cv{font-family:'Syne',sans-serif;font-size:1.55rem;font-weight:800}
+  .cv.green{color:var(--green)}.cv.yellow{color:var(--yellow)}.cv.red{color:var(--red)}.cv.accent{color:var(--accent)}.cv.orange{color:var(--accent2)}
+  .cs{font-size:.67rem;color:var(--muted);margin-top:4px;line-height:1.5}
+
+  .st{font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;margin-bottom:13px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .st::after{content:'';flex:1;height:1px;background:var(--border)}
+  .st .sp{background:rgba(124,109,240,.15);color:var(--accent);font-size:.61rem;padding:3px 8px;border-radius:20px;font-weight:600}
+
+  .tbl{width:100%;border-collapse:collapse;font-size:.74rem}
+  .tbl th{text-align:left;padding:8px 11px;color:var(--muted);font-size:.61rem;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500}
+  .tbl td{padding:8px 11px;border-bottom:1px solid rgba(46,46,62,.5);vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tr:hover td{background:rgba(255,255,255,.02)}
+  .tbl .tr td{font-family:'Syne',sans-serif;font-weight:700;border-top:1px solid var(--border)}
+
+  .ir{display:flex;gap:9px;margin-bottom:9px;align-items:flex-end;flex-wrap:wrap}
+  .ig{display:flex;flex-direction:column;gap:4px;flex:1;min-width:105px}
+  .ig label{font-size:.61rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+  input[type=text],input[type=number],select{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 10px;font-family:'DM Mono',monospace;font-size:.76rem;transition:border-color .2s;width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--accent)}
+
+  .btn{padding:8px 15px;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:.72rem;cursor:pointer;transition:all .2s;letter-spacing:.04em}
+  .bp{background:var(--accent);color:#fff}.bp:hover{background:#9585f5;transform:translateY(-1px);box-shadow:0 4px 15px rgba(124,109,240,.3)}
+  .bd{background:rgba(240,109,109,.12);color:var(--danger);border:1px solid rgba(240,109,109,.25)}.bd:hover{background:rgba(240,109,109,.22)}
+  .bsm{padding:4px 8px;font-size:.62rem}
+
+  .pok{background:rgba(74,222,128,.12);color:var(--green);border-radius:20px;padding:2px 9px;font-size:.62rem;font-weight:600;white-space:nowrap}
+  .pwarn{background:rgba(250,204,21,.12);color:var(--yellow);border-radius:20px;padding:2px 9px;font-size:.62rem;font-weight:600;white-space:nowrap}
+  .pover{background:rgba(248,113,113,.12);color:var(--red);border-radius:20px;padding:2px 9px;font-size:.62rem;font-weight:600;white-space:nowrap}
+  .ponce{background:rgba(240,162,109,.15);color:var(--accent2);border-radius:20px;padding:2px 9px;font-size:.62rem;font-weight:600;white-space:nowrap}
+
+  .pw{background:var(--border);border-radius:4px;height:5px;overflow:hidden;margin-top:10px}
+  .pb{height:100%;border-radius:4px;transition:width .5s ease}
+  .pbok{background:linear-gradient(90deg,var(--green),#34d399)}.pbwarn{background:linear-gradient(90deg,var(--yellow),#fbbf24)}.pbover{background:linear-gradient(90deg,var(--red),#f97316)}
+
+  .al{border-radius:10px;padding:12px 16px;font-size:.74rem;margin-bottom:14px;line-height:1.6}
+  .al.info{background:rgba(124,109,240,.1);border:1px solid rgba(124,109,240,.2);color:#c4bbff}
+  .al.warn{background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.2);color:#fde68a}
+  .al.danger{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:#fca5a5}
+  .al strong{font-family:'Syne',sans-serif}
+
+  .mnav{display:flex;align-items:center;gap:11px;margin-bottom:18px}
+  .mnav button{background:var(--card);border:1px solid var(--border);color:var(--text);width:31px;height:31px;border-radius:8px;font-size:.9rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+  .mnav button:hover{border-color:var(--accent);color:var(--accent)}
+  .mnav .ml{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;min-width:55px;text-align:center}
+
+  /* GASTOS INESPERADOS CARD */
+  .gic{border:1px solid rgba(240,162,109,.45);background:linear-gradient(135deg,rgba(240,162,109,.07),rgba(30,30,40,.95));border-radius:13px;padding:18px 20px;margin-bottom:16px}
+  .gic-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--accent2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .gic-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(46,46,62,.4);font-size:.74rem}
+  .gic-row:last-of-type{border-bottom:none}
+  .gic-row .gn{color:var(--muted)}.gic-row .gv{font-weight:600;color:var(--accent2)}
+  .gic-total{display:flex;justify-content:space-between;align-items:center;padding-top:9px;margin-top:6px;border-top:1px solid rgba(240,162,109,.3);font-family:'Syne',sans-serif;font-weight:700}
+
+  /* CHART */
+  .chartbox{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px 20px;margin-bottom:16px}
+  .chart-ttl{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;margin-bottom:14px}
+  .chart-wrap{position:relative;height:270px}
+  .leg{display:flex;gap:14px;flex-wrap:wrap;margin-top:11px}
+  .li{display:flex;align-items:center;gap:6px;font-size:.66rem;color:var(--muted)}
+  .ld{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🏠 AP Vila Monteiro</div>
+    <div class="header-sub">CONTROLE FINANCEIRO · 3 MORADORES</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="btn" onclick="exportarLink()" style="background:rgba(124,109,240,.15);color:var(--accent);border:1px solid rgba(124,109,240,.3);font-size:.65rem;padding:6px 13px">🔗 Exportar Link</button>
+    <span class="badge" id="hbadge">...</span>
+  </div>
+</div>
+<div id="share-toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e28;border:1px solid rgba(124,109,240,.4);color:#c4bbff;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:600;padding:10px 20px;border-radius:10px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4)">✅ Link copiado! Cole e mande pra galera.</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('resumo')">📊 Resumo</button>
+  <button class="tab" onclick="showTab('grafico')">📈 Gráfico Anual</button>
+  <button class="tab" onclick="showTab('moveis')">🛋️ Móveis</button>
+  <button class="tab" onclick="showTab('fixos')">🏦 Custos Fixos</button>
+  <button class="tab" onclick="showTab('parcelas')">💳 Parcelas</button>
+</div>
+
+<!-- ====== RESUMO ====== -->
+<div id="tab-resumo" class="panel active">
+  <div class="mnav">
+    <button onclick="changeMonth(-1)">◀</button>
+    <span class="ml" id="rml">Mês 1</span>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+
+  <!-- Gastos inesperados do 1º mês -->
+  <div id="gic-block" class="gic" style="display:none">
+    <div class="gic-title">⚠️ Gastos Inesperados do 1º Mês</div>
+    <div id="gic-rows"></div>
+    <div class="gic-total"><span>Total Inesperado</span><span id="gic-tot" style="color:var(--accent2)">–</span></div>
+  </div>
+
+  <!-- HERO: Total do mês + por pessoa -->
+  <div class="hero-card">
+    <div class="hero-left">
+      <div class="hero-label">Total do Mês</div>
+      <div class="hero-value" id="r-total-mes">–</div>
+      <div class="hero-sub" id="r-total-sub">fixos + parcelas</div>
+      <div class="pw" style="margin-top:14px"><div class="pb" id="r-prog"></div></div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-label">Cada um paga</div>
+      <div class="hero-value" id="r-por-pessoa">–</div>
+      <div class="hero-sub">÷ 3 moradores</div>
+      <div class="hero-divider"></div>
+      <div class="hero-row"><span class="hn">Fixos</span><span class="hv" id="rh-fixos">–</span></div>
+      <div class="hero-row"><span class="hn">Parcelas</span><span class="hv" id="rh-parcs">–</span></div>
+      <div class="hero-row" id="rh-inexp-row" style="display:none"><span class="hn" style="color:var(--accent2)">Inesperados</span><span class="hv" style="color:var(--accent2)" id="rh-inexp">–</span></div>
+      <div class="hero-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+        <span class="hn">Saldo</span>
+        <span class="hv" id="rh-saldo">–</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 cards de apoio -->
+  <div class="g3">
+    <div class="card">
+      <div class="cl">Entrada Mensal</div>
+      <div class="cv green">R$ 3.600</div>
+      <div class="cs">3 × R$ 1.200 combinados</div>
+    </div>
+    <div class="card">
+      <div class="cl">Orçamento p/ Móveis</div>
+      <div class="cv accent" id="r-orc">–</div>
+      <div class="cs" id="r-orc-s">margem do mês 2 em diante</div>
+    </div>
+    <div class="card">
+      <div class="cl">Parcela Média dos Móveis</div>
+      <div class="cv yellow" id="r-parc-media">–</div>
+      <div class="cs" id="r-parc-media-s">por mês (meses 2+)</div>
+    </div>
+  </div>
+
+  <div id="r-alert" class="al" style="display:none"></div>
+
+  <div class="st">Detalhamento do Mês</div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Item</th><th>Categoria</th><th>Valor</th><th>Por pessoa</th></tr></thead>
+      <tbody id="tbody-det"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ====== GRAFICO ====== -->
+<div id="tab-grafico" class="panel">
+  <div class="st">Simulação Anual <span class="sp">12 meses</span></div>
+  <div class="al info">📊 Barras empilhadas: <strong>fixos recorrentes</strong> (roxo) + <strong>gastos inesperados 1º mês</strong> (vermelho) + <strong>parcelas de móveis</strong> (laranja). Linha tracejada = R$ 3.600 (entrada total). Clique em qualquer linha da tabela para ver o mês.</div>
+
+  <div class="chartbox">
+    <div class="chart-ttl">Gastos Mensais vs. Entrada (R$ 3.600)</div>
+    <div class="chart-wrap"><canvas id="chartAnual"></canvas></div>
+    <div class="leg">
+      <div class="li"><div class="ld" style="background:#7c6df0"></div>Fixos Recorrentes</div>
+      <div class="li"><div class="ld" style="background:#f06d6d"></div>Gastos Inesperados (1º mês)</div>
+      <div class="li"><div class="ld" style="background:#f0a26d"></div>Parcelas de Móveis</div>
+      <div class="li"><div class="ld" style="background:transparent;border:1px dashed #f87171"></div>Limite (entrada)</div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card"><div class="cl">Mês mais caro</div><div class="cv red" id="g-max">–</div><div class="cs" id="g-max-s"></div></div>
+    <div class="card"><div class="cl">Mês mais barato</div><div class="cv green" id="g-min">–</div><div class="cs" id="g-min-s"></div></div>
+    <div class="card"><div class="cl">Meses dentro do limite</div><div class="cv accent" id="g-ok">–</div><div class="cs">de 12 meses</div></div>
+  </div>
+
+  <div class="st">Tabela Anual Completa</div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Mês</th><th>Fixos</th><th>Inesperados</th><th>Parcelas</th><th>Total</th><th>Por pessoa</th><th>Status</th></tr></thead>
+      <tbody id="tbody-anual"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ====== MOVEIS ====== -->
+<div id="tab-moveis" class="panel">
+  <div class="st">Orçamento para Móveis</div>
+  <div class="g3" style="margin-bottom:18px">
+    <div class="card"><div class="cl">Orçamento Real</div><div class="cv accent" id="m-orc">–</div><div class="cs" id="m-orc-s">margem mês 2 em diante × meses</div></div>
+    <div class="card"><div class="cl">Total Cotado</div><div class="cv" id="m-enc">–</div><div class="cs">soma dos preços encontrados</div></div>
+    <div class="card"><div class="cl">Diferença</div><div class="cv" id="m-diff">–</div><div class="cs" id="m-diff-s"></div><div class="pw"><div class="pb" id="m-prog"></div></div></div>
+  </div>
+
+  <div class="st">Adicionar Item</div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="ir">
+      <div class="ig" style="flex:2"><label>Nome</label><input type="text" id="m-nome" placeholder="ex: Sofá retrátil"></div>
+      <div class="ig"><label>Preço Ideal</label><input type="number" id="m-ideal" placeholder="1500" min="0"></div>
+      <div class="ig"><label>Preço Encontrado</label><input type="number" id="m-enc2" placeholder="1738" min="0"></div>
+    </div>
+    <div class="ir">
+      <div class="ig"><label>Parcelas</label>
+        <select id="m-p">
+          <option value="1">1× à vista</option><option value="10" selected>10×</option>
+          <option value="12">12×</option><option value="custom">outro...</option>
+        </select>
+      </div>
+      <div class="ig" id="m-pc-w" style="display:none"><label>Qtd.</label><input type="number" id="m-pc" placeholder="8" min="1"></div>
+      <div class="ig"><label>Juros</label>
+        <select id="m-j">
+          <option value="0">Sem juros</option><option value="0.0199">1,99% a.m.</option>
+          <option value="0.0299">2,99% a.m.</option><option value="custom">outro %</option>
+        </select>
+      </div>
+      <div class="ig" id="m-jc-w" style="display:none"><label>Taxa a.m. (%)</label><input type="number" id="m-jc" placeholder="2.5" step="0.01"></div>
+    </div>
+    <div class="ir">
+      <div class="ig"><label>Já Comprado?</label>
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 0"><input type="checkbox" id="m-comp"><span style="font-size:.74rem;color:var(--muted)">Sim</span></div>
+      </div>
+      <div class="ig"><label>Quanto paguei? (R$)</label><input type="number" id="m-pago" placeholder="0" min="0"></div>
+      <div class="ig"><label>Pago à vista (1x só)?</label>
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 0"><input type="checkbox" id="m-av"><span style="font-size:.74rem;color:var(--muted)">Sim — peso só no mês 1</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-end"><button class="btn bp" onclick="addMovel()">＋ Adicionar</button></div>
+    </div>
+  </div>
+
+  <div class="st">Lista de Itens</div>
+  <div class="card">
+    <table class="tbl" style="font-size:.71rem">
+      <thead><tr><th>Item</th><th>Ideal</th><th>Encontrado</th><th>Pago</th><th>Parcelas</th><th>Parc./mês</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tbody-moveis"></tbody>
+      <tfoot><tr class="tr"><td>TOTAL</td><td id="tm-i">–</td><td id="tm-e">–</td><td id="tm-p">–</td><td></td><td id="tm-pm">–</td><td></td><td></td></tr></tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- ====== FIXOS ====== -->
+<div id="tab-fixos" class="panel">
+  <div class="al info">💡 Itens <strong>"só 1º mês"</strong> (ex: seguro incêndio) aparecem como <strong>Gastos Inesperados</strong> no Resumo e <strong>não entram no cálculo do orçamento de móveis</strong>.</div>
+  <div class="st">Custos Fixos</div>
+  <div class="card" style="margin-bottom:16px">
+    <table class="tbl">
+      <thead><tr><th>Item</th><th>Valor</th><th>Tipo</th><th></th></tr></thead>
+      <tbody id="tbody-fixos"></tbody>
+      <tfoot><tr class="tr"><td>TOTAL RECORRENTE</td><td id="tf-tot">–</td><td colspan="2"></td></tr></tfoot>
+    </table>
+  </div>
+  <div class="st">Adicionar</div>
+  <div class="card">
+    <div class="ir">
+      <div class="ig" style="flex:2"><label>Descrição</label><input type="text" id="f-nome" placeholder="ex: Seguro Incêndio"></div>
+      <div class="ig"><label>Valor (R$)</label><input type="number" id="f-val" placeholder="437.38" min="0"></div>
+      <div class="ig"><label>Tipo</label>
+        <select id="f-tipo">
+          <option value="recorrente">Recorrente (todo mês)</option>
+          <option value="unico">Único (só 1º mês)</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end"><button class="btn bp" onclick="addFixo()">＋ Adicionar</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PARCELAS ====== -->
+<div id="tab-parcelas" class="panel">
+  <div class="st">Calendário de Parcelas</div>
+  <div class="al info">🗓 Clique em qualquer linha para ir ao resumo daquele mês. Gastos inesperados e à vista só aparecem no Mês 1.</div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Mês</th><th>Fixos</th><th>Inesperados</th><th>Parcelas</th><th>Total</th><th>Por pessoa</th><th>Status</th></tr></thead>
+      <tbody id="tbody-parc"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const ENTRADA = 3600;
+const N_PESSOAS = 3;
+let curMes = 1;
+let chart = null;
+
+// ─── DEFAULTS ───────────────────────────────────────────
+const DEFAULT_FIXOS = [
+  {id:1, nome:'Aluguel',           valor:1900,   tipo:'recorrente'},
+  {id:2, nome:'Condomínio',        valor:438.18, tipo:'recorrente'},
+  {id:3, nome:'IPTU',              valor:124,    tipo:'recorrente'},
+  {id:4, nome:'Internet',          valor:100,    tipo:'recorrente'},
+  {id:5, nome:'Luz (estimada)',    valor:200,    tipo:'recorrente'},
+  {id:6, nome:'Seguro Incêndio',   valor:437.38, tipo:'unico'},
+];
+
+const DEFAULT_MOVEIS = [
+  {id:1,  nome:'Máquina de Lavar Consul',     ideal:1800, enc:1738.99, pago:0,      comp:false, p:10, j:0,      av:false},
+  {id:2,  nome:'Sofá Retrátil 2,30m',         ideal:1500, enc:2000,    pago:0,      comp:false, p:10, j:0,      av:false},
+  {id:3,  nome:'Fogão 4 Bocas Consul',         ideal:1000, enc:1161.98, pago:0,      comp:false, p:10, j:0,      av:false},
+  {id:4,  nome:'Mesa de Jantar c/ 4 Cadeiras', ideal:700,  enc:700,     pago:0,      comp:false, p:10, j:0,      av:false},
+  {id:5,  nome:'Micro-ondas Electrolux 20L',   ideal:500,  enc:479,     pago:0,      comp:false, p:9,  j:0,      av:false},
+  {id:6,  nome:'Aspirador de Pó Vertical',     ideal:180,  enc:201.48,  pago:0,      comp:false, p:12, j:0.0199, av:false},
+  {id:7,  nome:'Tapete Sala',                  ideal:150,  enc:64.25,   pago:64.25,  comp:true,  p:1,  j:0,      av:true},
+  {id:8,  nome:'Kit Panelas Antiaderente',      ideal:250,  enc:237.48,  pago:0,      comp:false, p:12, j:0,      av:false},
+  {id:9,  nome:'Kit Pratos, Copos e Talheres', ideal:150,  enc:95,      pago:95,     comp:true,  p:1,  j:0,      av:true},
+  {id:10, nome:'Kit Limpeza Básica',            ideal:120,  enc:113.42,  pago:113.42, comp:true,  p:1,  j:0,      av:true},
+  {id:11, nome:'Kit Potes Herméticos',          ideal:100,  enc:86,      pago:60.93,  comp:true,  p:1,  j:0,      av:true},
+  {id:12, nome:'Pregadores de Roupa',           ideal:20,   enc:23.18,   pago:23.18,  comp:true,  p:1,  j:0,      av:true},
+  {id:13, nome:'Kit Instalação Gás Fogão',      ideal:160,  enc:165.6,   pago:165.6,  comp:true,  p:1,  j:0,      av:true},
+  {id:14, nome:'Tapetes Cozinha + Banheiro',   ideal:140,  enc:127.7,   pago:127.7,  comp:true,  p:1,  j:0,      av:true},
+  {id:15, nome:'2x Kit Banheiro',               ideal:120,  enc:144.64,  pago:144.64, comp:true,  p:1,  j:0,      av:true},
+  {id:16, nome:'Toalha Rosto',                  ideal:50,   enc:40.54,   pago:51.96,  comp:true,  p:1,  j:0,      av:true},
+];
+
+// live state — populated by loadData()
+let fixos  = JSON.parse(JSON.stringify(DEFAULT_FIXOS));
+let moveis = JSON.parse(JSON.stringify(DEFAULT_MOVEIS));
+let nid = 100;
+
+// ─── PERSIST ────────────────────────────────────────────
+const LS_KEY = 'ap_vila_monteiro_v1';
+
+function saveData() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ fixos, moveis, nid }));
+  } catch(e) {}
+}
+
+function loadData() {
+  // 1) try URL hash first (shared link)
+  try {
+    const hash = location.hash.slice(1);
+    if (hash) {
+      const parsed = JSON.parse(decodeURIComponent(atob(hash)));
+      if (parsed.fixos && parsed.moveis) {
+        fixos  = parsed.fixos;
+        moveis = parsed.moveis;
+        nid    = parsed.nid || 100;
+        // clear hash so refresh uses localStorage from now on
+        history.replaceState(null, '', location.pathname);
+        saveData();
+        return;
+      }
+    }
+  } catch(e) {}
+  // 2) try localStorage
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.fixos && parsed.moveis) {
+        fixos  = parsed.fixos;
+        moveis = parsed.moveis;
+        nid    = parsed.nid || 100;
+        return;
+      }
+    }
+  } catch(e) {}
+  // 3) use defaults already set above
+}
+
+function exportarLink() {
+  try {
+    const data = btoa(encodeURIComponent(JSON.stringify({ fixos, moveis, nid })));
+    const url  = location.href.split('#')[0] + '#' + data;
+    navigator.clipboard.writeText(url).then(() => showToast()).catch(() => {
+      prompt('Copie o link abaixo:', url);
+    });
+  } catch(e) { alert('Erro ao gerar link: ' + e.message); }
+}
+
+function showToast() {
+  const t = document.getElementById('share-toast');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// ─── helpers ───────────────────────────────────────────
+const fmt  = v => 'R$ ' + Math.abs(v).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const fmtS = v => (v < 0 ? '- ' : '+ ') + fmt(Math.abs(v));
+
+function calcParcela(m) {
+  if (m.av) return 0;
+  const base = (m.comp && m.pago > 0) ? m.pago : m.enc;
+  if (!base) return 0;
+  if (m.j === 0) return base / m.p;
+  return base * (m.j * Math.pow(1+m.j, m.p)) / (Math.pow(1+m.j, m.p) - 1);
+}
+
+function totalFixRec()  { return fixos.filter(f => f.tipo==='recorrente').reduce((s,f) => s+f.valor, 0); }
+function totalFixUni()  { return fixos.filter(f => f.tipo==='unico').reduce((s,f) => s+f.valor, 0); }
+function totalAvista()  { return moveis.filter(m => m.av).reduce((s,m) => s+(m.pago>0?m.pago:m.enc||0), 0); }
+
+function totalParcsM(mes) {
+  return moveis.reduce((s,m) => {
+    if (m.av) return s;
+    const pv = calcParcela(m);
+    return (mes >= 1 && mes <= m.p) ? s + pv : s;
+  }, 0);
+}
+
+// custos do mês: separados em fixos recorrentes, inesperados (só mês 1) e parcelas normais
+function custosMes(mes) {
+  const fr  = totalFixRec();
+  const ines = mes === 1 ? (totalFixUni() + totalAvista()) : 0;
+  const pc  = totalParcsM(mes);
+  return { fr, ines, pc, tot: fr + ines + pc };
+}
+
+// Orçamento real de móveis = margem do mês 2 em diante × número de meses
+// mês 2+ = sem inesperados, só fixos rec + parcelas
+// margem = ENTRADA - fixos recorrentes  (parcelas são oq estamos calculando, então margem bruta)
+function orcMoveis() {
+  const mar  = ENTRADA - totalFixRec();
+  const maxP = Math.max(1, ...moveis.filter(m => !m.av).map(m => m.p));
+  // subtract mês 1 por ser atípico — usamos meses 2 em diante
+  const mesesValidos = maxP; // já que o 1º mês não conta pro orçamento de parcelamento
+  return { mar, maxP: mesesValidos, tot: mar * mesesValidos };
+}
+
+// ─── tabs ───────────────────────────────────────────────
+function showTab(id) {
+  const ids = ['resumo','grafico','moveis','fixos','parcelas'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ids[i]===id));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  renderAll();
+}
+function changeMonth(d) { curMes = Math.max(1, Math.min(24, curMes+d)); renderResumo(); }
+
+// ─── RESUMO ─────────────────────────────────────────────
+function renderResumo() {
+  const mes = curMes;
+  document.getElementById('rml').textContent = 'Mês ' + mes;
+
+  const { fr, ines, pc, tot } = custosMes(mes);
+  const saldo  = ENTRADA - tot;
+  const porPessoa = tot / N_PESSOAS;
+  const orc = orcMoveis();
+
+  // parcela do mês 1 (inclui à vista)
+  const parcM1 = totalParcsM(1) + totalAvista();
+
+  // gastos inesperados card
+  const gicB = document.getElementById('gic-block');
+  if (mes === 1 && ines > 0) {
+    gicB.style.display = 'block';
+    let rows = '';
+    fixos.filter(f => f.tipo==='unico').forEach(f => {
+      rows += `<div class="gic-row"><span class="gn">🔥 ${f.nome}</span><span class="gv">${fmt(f.valor)}</span></div>`;
+    });
+    moveis.filter(m => m.av).forEach(m => {
+      const v = m.pago > 0 ? m.pago : m.enc;
+      if (v > 0) rows += `<div class="gic-row"><span class="gn">💸 ${m.nome} (à vista)</span><span class="gv">${fmt(v)}</span></div>`;
+    });
+    document.getElementById('gic-rows').innerHTML = rows;
+    document.getElementById('gic-tot').textContent = fmt(ines);
+  } else {
+    gicB.style.display = 'none';
+  }
+
+  // hero card
+  const heroVal = document.getElementById('r-total-mes');
+  heroVal.textContent = fmt(tot);
+  heroVal.className = 'hero-value ' + (tot > ENTRADA ? 'red' : tot > ENTRADA*.9 ? 'yellow' : 'green');
+
+  const ppEl = document.getElementById('r-por-pessoa');
+  ppEl.textContent = fmt(porPessoa);
+  ppEl.className = 'hero-value ' + (porPessoa > 1200 ? 'red' : porPessoa > 1100 ? 'yellow' : 'green');
+
+  document.getElementById('r-total-sub').textContent = mes===1 ? 'fixos + parcelas + gastos inesperados' : 'fixos + parcelas';
+  document.getElementById('rh-fixos').textContent = fmt(fr);
+  document.getElementById('rh-parcs').textContent = fmt(pc + (mes===1?totalAvista():0));
+
+  const inexpRow = document.getElementById('rh-inexp-row');
+  if (mes === 1 && totalFixUni() > 0) {
+    inexpRow.style.display = 'flex';
+    document.getElementById('rh-inexp').textContent = fmt(totalFixUni());
+  } else {
+    inexpRow.style.display = 'none';
+  }
+
+  const saldoEl = document.getElementById('rh-saldo');
+  saldoEl.textContent = fmtS(saldo);
+  saldoEl.style.color = saldo < 0 ? 'var(--red)' : saldo < 150 ? 'var(--yellow)' : 'var(--green)';
+
+  const pct = Math.min((tot/ENTRADA)*100, 100);
+  const pb = document.getElementById('r-prog');
+  pb.style.width = pct+'%';
+  pb.className = 'pb ' + (pct>100?'pbover':pct>88?'pbwarn':'pbok');
+
+  document.getElementById('r-orc').textContent = fmt(orc.tot);
+  document.getElementById('r-orc-s').textContent = `margem ${fmt(orc.mar)} × ${orc.maxP} meses`;
+  document.getElementById('r-parc-media').textContent = fmt(parcM1);
+  document.getElementById('r-parc-media-s').textContent = `meses 1 a ${orc.maxP}`;
+
+  // alert
+  const al = document.getElementById('r-alert');
+  if (mes === 1 && saldo < 0) {
+    al.style.display='block'; al.className='al danger';
+    al.innerHTML=`⚠️ <strong>1º mês pesado!</strong> Seguro incêndio + compras à vista fazem estourar em ${fmt(Math.abs(saldo))}. Cada um vai pagar ${fmt(porPessoa)} este mês — do 2º em diante fica bem mais leve!`;
+  } else if (saldo < 0) {
+    al.style.display='block'; al.className='al danger';
+    al.innerHTML=`⚠️ <strong>Estouro!</strong> Total ultrapassa a entrada em ${fmt(Math.abs(saldo))}. Cada um pagaria ${fmt(porPessoa)}.`;
+  } else if (porPessoa > 1100) {
+    al.style.display='block'; al.className='al warn';
+    al.innerHTML=`⚡ <strong>Atenção!</strong> Cada um vai pagar ${fmt(porPessoa)} — próximo do limite de R$ 1.200.`;
+  } else {
+    al.style.display='none';
+  }
+
+  // detalhe
+  let rows = '';
+  fixos.forEach(f => {
+    if (f.tipo==='unico' && mes!==1) return;
+    const cat = f.tipo==='unico' ? '<span class="ponce">inesperado</span>' : '<span class="pok">fixo</span>';
+    rows += `<tr><td>${f.nome}</td><td>${cat}</td><td>${fmt(f.valor)}</td><td style="color:var(--muted)">${fmt(f.valor/N_PESSOAS)}</td></tr>`;
+  });
+  moveis.forEach(m => {
+    if (m.av) {
+      if (mes!==1) return;
+      const v = m.pago>0 ? m.pago : m.enc;
+      if (!v) return;
+      rows += `<tr><td>${m.nome}</td><td><span class="ponce">à vista</span></td><td>${fmt(v)}</td><td style="color:var(--muted)">${fmt(v/N_PESSOAS)}</td></tr>`;
+    } else {
+      if (mes > m.p) return;
+      const pv = calcParcela(m);
+      if (!pv) return;
+      rows += `<tr><td>${m.nome}</td><td><span class="pwarn">${mes}/${m.p}</span></td><td>${fmt(pv)}</td><td style="color:var(--muted)">${fmt(pv/N_PESSOAS)}</td></tr>`;
+    }
+  });
+  rows += `<tr class="tr"><td>TOTAL</td><td></td><td style="color:${tot>ENTRADA?'var(--red)':'var(--text)'}">${fmt(tot)}</td><td style="color:${porPessoa>1200?'var(--red)':porPessoa>1100?'var(--yellow)':'var(--green)'}; font-family:'Syne',sans-serif">${fmt(porPessoa)}</td></tr>`;
+  document.getElementById('tbody-det').innerHTML = rows;
+
+  // badge
+  const b = document.getElementById('hbadge');
+  const { tot:t1 } = custosMes(1);
+  const pp1 = t1/N_PESSOAS;
+  if (pp1 > 1200) { b.textContent='🔴 1º MÊS PESADO'; b.style.background='#991b1b'; }
+  else { b.textContent='🟢 OK'; b.style.background='#15803d'; }
+}
+
+// ─── GRÁFICO ────────────────────────────────────────────
+function renderGrafico() {
+  const lbs = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const frA=[], inesA=[], pcA=[], tots=[];
+
+  for (let m=1; m<=12; m++) {
+    const { fr, ines, pc, tot } = custosMes(m);
+    frA.push(fr); inesA.push(ines); pcA.push(pc); tots.push(tot);
+  }
+
+  const maxT=Math.max(...tots), minT=Math.min(...tots);
+  const maxI=tots.indexOf(maxT), minI=tots.indexOf(minT);
+  const okC=tots.filter(t=>t<=ENTRADA).length;
+
+  document.getElementById('g-max').textContent=fmt(maxT); document.getElementById('g-max-s').textContent=lbs[maxI];
+  document.getElementById('g-min').textContent=fmt(minT); document.getElementById('g-min-s').textContent=lbs[minI];
+  document.getElementById('g-ok').textContent=okC+' / 12';
+
+  let rows='';
+  for (let i=0; i<12; i++) {
+    const mes=i+1, { fr, ines, pc, tot }=custosMes(mes);
+    const saldo=ENTRADA-tot, pp=tot/N_PESSOAS;
+    const sc=tot>ENTRADA?'pover':tot>ENTRADA*.9?'pwarn':'pok';
+    const st=tot>ENTRADA?'estouro':tot>ENTRADA*.9?'apertado':'ok';
+    rows+=`<tr style="cursor:pointer" onclick="curMes=${mes};showTab('resumo')">
+      <td style="font-family:'Syne',sans-serif;font-weight:600">${lbs[i]}</td>
+      <td>${fmt(fr)}</td>
+      <td style="color:${ines>0?'var(--accent2)':'var(--muted)'}">${ines>0?fmt(ines):'–'}</td>
+      <td style="color:${pc>0?'var(--yellow)':'var(--muted)'}">${pc>0?fmt(pc):'–'}</td>
+      <td style="font-family:'Syne',sans-serif;font-weight:700;color:${tot>ENTRADA?'var(--red)':tot>ENTRADA*.9?'var(--yellow)':'var(--text)'}">${fmt(tot)}</td>
+      <td style="color:${pp>1200?'var(--red)':pp>1100?'var(--yellow)':'var(--green)'}; font-weight:600">${fmt(pp)}</td>
+      <td><span class="${sc}">${st}</span></td>
+    </tr>`;
+  }
+  document.getElementById('tbody-anual').innerHTML = rows;
+
+  const ctx = document.getElementById('chartAnual').getContext('2d');
+  if (chart) { chart.destroy(); }
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: lbs,
+      datasets: [
+        { label:'Fixos Recorrentes',         data:frA,   backgroundColor:'rgba(124,109,240,.75)', borderColor:'rgba(124,109,240,1)', borderWidth:1, stack:'s' },
+        { label:'Gastos Inesperados (1º mês)',data:inesA, backgroundColor:'rgba(240,109,109,.72)', borderColor:'rgba(240,109,109,1)', borderWidth:1, stack:'s' },
+        { label:'Parcelas de Móveis',         data:pcA,   backgroundColor:'rgba(240,162,109,.75)', borderColor:'rgba(240,162,109,1)', borderWidth:1, stack:'s' },
+        { label:'Limite (entrada)',            data:Array(12).fill(ENTRADA), type:'line', borderColor:'rgba(248,113,113,.75)', borderWidth:2, borderDash:[6,4], pointRadius:0, fill:false, stack:undefined, order:0 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1e1e28', borderColor:'#2e2e3e', borderWidth:1,
+          titleColor:'#e8e8f0', bodyColor:'#a0a0c0',
+          titleFont:{family:'Syne',weight:'700'},
+          callbacks:{ label: c => ` ${c.dataset.label}: R$ ${c.parsed.y.toFixed(2).replace('.',',')}` }
+        }
+      },
+      scales:{
+        x:{ stacked:true, grid:{color:'rgba(46,46,62,.5)'}, ticks:{color:'#7070a0',font:{family:'DM Mono',size:11}} },
+        y:{ stacked:true, grid:{color:'rgba(46,46,62,.5)'}, ticks:{color:'#7070a0',font:{family:'DM Mono',size:11}, callback:v=>'R$'+v.toLocaleString('pt-BR')} }
+      }
+    }
+  });
+}
+
+// ─── MÓVEIS ─────────────────────────────────────────────
+function renderMoveis() {
+  let ti=0,te=0,tp=0,tpm=0, rows='';
+  moveis.forEach(m => {
+    const pv=calcParcela(m);
+    ti+=m.ideal||0; te+=m.enc||0; tp+=m.pago||0;
+    if (!m.av) tpm+=pv;
+    const diff=m.enc-m.ideal;
+    const ds=m.enc>0&&m.ideal>0?`<span style="color:${diff>0?'var(--red)':'var(--green)'};font-size:.67rem">${diff>=0?'+':'-'}${fmt(Math.abs(diff))}</span>`:'';
+    const st=m.comp?'<span class="pok">✓ comprado</span>':m.enc>m.ideal&&m.ideal>0?'<span class="pover">acima</span>':m.enc>0?'<span class="pwarn">cotado</span>':'<span style="color:var(--muted);font-size:.67rem">pendente</span>';
+    const ptxt=m.av?'<span class="ponce">à vista</span>':`${m.p}× ${fmt(pv)}`;
+    rows+=`<tr><td>${m.nome}</td><td style="color:var(--muted)">${m.ideal>0?fmt(m.ideal):'–'}</td><td>${m.enc>0?fmt(m.enc):'–'} ${ds}</td><td>${m.pago>0?fmt(m.pago):'–'}</td><td style="color:var(--muted);font-size:.69rem">${m.p}× ${m.j>0?`(${(m.j*100).toFixed(2)}%)`:''}</td><td>${ptxt}</td><td>${st}</td><td><button class="btn bd bsm" onclick="removeMovel(${m.id})">✕</button></td></tr>`;
+  });
+  document.getElementById('tbody-moveis').innerHTML = rows;
+  document.getElementById('tm-i').textContent=fmt(ti);
+  document.getElementById('tm-e').textContent=fmt(te);
+  document.getElementById('tm-p').textContent=fmt(tp);
+  document.getElementById('tm-pm').textContent=fmt(tpm)+'/mês';
+
+  const orc=orcMoveis(), diff=te-orc.tot;
+  const de=document.getElementById('m-diff');
+  de.textContent=fmt(Math.abs(diff));
+  de.className='cv '+(diff>0?'red':'green');
+  document.getElementById('m-diff-s').textContent=diff>0?`${fmt(diff)} acima!`:`${fmt(Math.abs(diff))} disponível`;
+  document.getElementById('m-enc').textContent=fmt(te);
+  document.getElementById('m-enc').className='cv '+(te>orc.tot?'red':'yellow');
+  document.getElementById('m-orc').textContent=fmt(orc.tot);
+  document.getElementById('m-orc-s').textContent=`margem ${fmt(orc.mar)} × ${orc.maxP} meses`;
+  const pct=Math.min((te/orc.tot)*100,120);
+  const pb=document.getElementById('m-prog');
+  pb.style.width=Math.min(pct,100)+'%';
+  pb.className='pb '+(pct>100?'pbover':pct>80?'pbwarn':'pbok');
+}
+
+function addMovel() {
+  const nome=document.getElementById('m-nome').value.trim();
+  if (!nome){alert('Informe o nome!');return;}
+  const ideal=parseFloat(document.getElementById('m-ideal').value)||0;
+  const enc=parseFloat(document.getElementById('m-enc2').value)||0;
+  const pe=document.getElementById('m-p');
+  const p=pe.value==='custom'?parseInt(document.getElementById('m-pc').value)||1:parseInt(pe.value);
+  const je=document.getElementById('m-j');
+  const j=je.value==='custom'?(parseFloat(document.getElementById('m-jc').value)||0)/100:parseFloat(je.value);
+  const comp=document.getElementById('m-comp').checked;
+  const pago=parseFloat(document.getElementById('m-pago').value)||0;
+  const av=document.getElementById('m-av').checked;
+  moveis.push({id:nid++,nome,ideal,enc,pago,comp,p,j,av});
+  ['m-nome','m-ideal','m-enc2','m-pago'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-comp').checked=false;
+  document.getElementById('m-av').checked=false;
+  saveData();
+  renderAll();
+}
+function removeMovel(id){moveis=moveis.filter(m=>m.id!==id);saveData();renderAll();}
+document.getElementById('m-p').addEventListener('change',function(){document.getElementById('m-pc-w').style.display=this.value==='custom'?'flex':'none';});
+document.getElementById('m-j').addEventListener('change',function(){document.getElementById('m-jc-w').style.display=this.value==='custom'?'flex':'none';});
+
+// ─── FIXOS ──────────────────────────────────────────────
+function renderFixos() {
+  let tot=0, rows='';
+  fixos.forEach(f => {
+    if (f.tipo==='recorrente') tot+=f.valor;
+    const tag=f.tipo==='unico'?'<span class="ponce">só 1º mês</span>':'<span class="pok">todo mês</span>';
+    rows+=`<tr><td>${f.nome}</td><td>${fmt(f.valor)}</td><td>${tag}</td><td><button class="btn bd bsm" onclick="removeFixo(${f.id})">✕</button></td></tr>`;
+  });
+  document.getElementById('tbody-fixos').innerHTML = rows;
+  document.getElementById('tf-tot').textContent = fmt(tot);
+}
+function addFixo() {
+  const nome=document.getElementById('f-nome').value.trim();
+  const valor=parseFloat(document.getElementById('f-val').value)||0;
+  const tipo=document.getElementById('f-tipo').value;
+  if (!nome||valor<=0){alert('Informe descrição e valor!');return;}
+  fixos.push({id:nid++,nome,valor,tipo});
+  document.getElementById('f-nome').value='';
+  document.getElementById('f-val').value='';
+  saveData();
+  renderAll();
+}
+function removeFixo(id){fixos=fixos.filter(f=>f.id!==id);saveData();renderAll();}
+
+// ─── PARCELAS ───────────────────────────────────────────
+function renderParcelas() {
+  const maxM=Math.max(12,...moveis.filter(m=>!m.av).map(m=>m.p));
+  let rows='';
+  for (let mes=1; mes<=Math.min(maxM,18); mes++) {
+    const { fr, ines, pc, tot }=custosMes(mes);
+    const saldo=ENTRADA-tot, pp=tot/N_PESSOAS;
+    const isCur=mes===curMes;
+    const sc=tot>ENTRADA?'pover':tot>ENTRADA*.9?'pwarn':'pok';
+    const st=tot>ENTRADA?'estouro':tot>ENTRADA*.9?'apertado':'ok';
+    rows+=`<tr style="cursor:pointer;${isCur?'background:rgba(124,109,240,.08)':''}" onclick="curMes=${mes};showTab('resumo')">
+      <td style="font-family:'Syne',sans-serif;font-weight:${isCur?'700':'400'};color:${isCur?'var(--accent)':'inherit'}">Mês ${mes}${isCur?' ◀':''}</td>
+      <td style="color:var(--muted)">${fmt(fr)}</td>
+      <td style="color:${ines>0?'var(--accent2)':'var(--muted)'}">${ines>0?fmt(ines):'–'}</td>
+      <td style="color:${pc>0?'var(--yellow)':'var(--muted)'}">${pc>0?fmt(pc):'–'}</td>
+      <td style="font-family:'Syne',sans-serif;font-weight:700;color:${tot>ENTRADA?'var(--red)':tot>ENTRADA*.9?'var(--yellow)':'var(--text)'}">${fmt(tot)}</td>
+      <td style="color:${pp>1200?'var(--red)':pp>1100?'var(--yellow)':'var(--green)'}; font-weight:600">${fmt(pp)}</td>
+      <td><span class="${sc}">${st}</span></td>
+    </tr>`;
+  }
+  document.getElementById('tbody-parc').innerHTML = rows;
+}
+
+// ─── RENDER ALL ─────────────────────────────────────────
+function renderAll(){renderResumo();renderGrafico();renderMoveis();renderFixos();renderParcelas();}
+loadData();
+renderAll();
+</script>
+</body>
+</html>
