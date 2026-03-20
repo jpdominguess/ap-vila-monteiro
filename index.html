@@ -122,12 +122,8 @@
     <div class="header-title">🏠 AP Vila Monteiro</div>
     <div class="header-sub">CONTROLE FINANCEIRO · 3 MORADORES</div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <button class="btn" onclick="exportarLink()" style="background:rgba(124,109,240,.15);color:var(--accent);border:1px solid rgba(124,109,240,.3);font-size:.65rem;padding:6px 13px">🔗 Exportar Link</button>
-    <span class="badge" id="hbadge">...</span>
-  </div>
+  <span class="badge" id="hbadge">...</span>
 </div>
-<div id="share-toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e28;border:1px solid rgba(124,109,240,.4);color:#c4bbff;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:600;padding:10px 20px;border-radius:10px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4)">✅ Link copiado! Cole e mande pra galera.</div>
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('resumo')">📊 Resumo</button>
@@ -329,105 +325,50 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+// 1. Importando as ferramentas do Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getDatabase, ref, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+// 2. Sua configuração (exatamente como você mandou)
+const firebaseConfig = {
+  apiKey: "AIzaSyBbHJkL2morPcWL6LuVVI9koH-6aQ3xE5k",
+  authDomain: "ap-vila-monteiro.firebaseapp.com",
+  databaseURL: "https://ap-vila-monteiro-default-rtdb.firebaseio.com"
+};
+
+// 3. Inicializando a conexão
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Constantes do seu app
 const ENTRADA = 3600;
 const N_PESSOAS = 3;
 let curMes = 1;
 let chart = null;
 
-// ─── DEFAULTS ───────────────────────────────────────────
-const DEFAULT_FIXOS = [
-  {id:1, nome:'Aluguel',           valor:1900,   tipo:'recorrente'},
-  {id:2, nome:'Condomínio',        valor:438.18, tipo:'recorrente'},
-  {id:3, nome:'IPTU',              valor:124,    tipo:'recorrente'},
-  {id:4, nome:'Internet',          valor:100,    tipo:'recorrente'},
-  {id:5, nome:'Luz (estimada)',    valor:200,    tipo:'recorrente'},
-  {id:6, nome:'Seguro Incêndio',   valor:437.38, tipo:'unico'},
-];
+// Agora os arrays começam vazios, quem vai preencher é o Firebase!
+let fixos = [];
+let moveis = [];
 
-const DEFAULT_MOVEIS = [
-  {id:1,  nome:'Máquina de Lavar Consul',     ideal:1800, enc:1738.99, pago:0,      comp:false, p:10, j:0,      av:false},
-  {id:2,  nome:'Sofá Retrátil 2,30m',         ideal:1500, enc:2000,    pago:0,      comp:false, p:10, j:0,      av:false},
-  {id:3,  nome:'Fogão 4 Bocas Consul',         ideal:1000, enc:1161.98, pago:0,      comp:false, p:10, j:0,      av:false},
-  {id:4,  nome:'Mesa de Jantar c/ 4 Cadeiras', ideal:700,  enc:700,     pago:0,      comp:false, p:10, j:0,      av:false},
-  {id:5,  nome:'Micro-ondas Electrolux 20L',   ideal:500,  enc:479,     pago:0,      comp:false, p:9,  j:0,      av:false},
-  {id:6,  nome:'Aspirador de Pó Vertical',     ideal:180,  enc:201.48,  pago:0,      comp:false, p:12, j:0.0199, av:false},
-  {id:7,  nome:'Tapete Sala',                  ideal:150,  enc:64.25,   pago:64.25,  comp:true,  p:1,  j:0,      av:true},
-  {id:8,  nome:'Kit Panelas Antiaderente',      ideal:250,  enc:237.48,  pago:0,      comp:false, p:12, j:0,      av:false},
-  {id:9,  nome:'Kit Pratos, Copos e Talheres', ideal:150,  enc:95,      pago:95,     comp:true,  p:1,  j:0,      av:true},
-  {id:10, nome:'Kit Limpeza Básica',            ideal:120,  enc:113.42,  pago:113.42, comp:true,  p:1,  j:0,      av:true},
-  {id:11, nome:'Kit Potes Herméticos',          ideal:100,  enc:86,      pago:60.93,  comp:true,  p:1,  j:0,      av:true},
-  {id:12, nome:'Pregadores de Roupa',           ideal:20,   enc:23.18,   pago:23.18,  comp:true,  p:1,  j:0,      av:true},
-  {id:13, nome:'Kit Instalação Gás Fogão',      ideal:160,  enc:165.6,   pago:165.6,  comp:true,  p:1,  j:0,      av:true},
-  {id:14, nome:'Tapetes Cozinha + Banheiro',   ideal:140,  enc:127.7,   pago:127.7,  comp:true,  p:1,  j:0,      av:true},
-  {id:15, nome:'2x Kit Banheiro',               ideal:120,  enc:144.64,  pago:144.64, comp:true,  p:1,  j:0,      av:true},
-  {id:16, nome:'Toalha Rosto',                  ideal:50,   enc:40.54,   pago:51.96,  comp:true,  p:1,  j:0,      av:true},
-];
+// 4. "Ouvindo" o banco de dados em tempo real
+onValue(ref(db, 'fixos'), (snapshot) => {
+  fixos = [];
+  snapshot.forEach((child) => {
+    fixos.push({ id: child.key, ...child.val() });
+  });
+  renderAll(); // Atualiza a tela toda vez que os dados mudarem
+});
 
-// live state — populated by loadData()
-let fixos  = JSON.parse(JSON.stringify(DEFAULT_FIXOS));
-let moveis = JSON.parse(JSON.stringify(DEFAULT_MOVEIS));
-let nid = 100;
+onValue(ref(db, 'moveis'), (snapshot) => {
+  moveis = [];
+  snapshot.forEach((child) => {
+    moveis.push({ id: child.key, ...child.val() });
+  });
+  renderAll(); // Atualiza a tela toda vez que os dados mudarem
+});
 
-// ─── PERSIST ────────────────────────────────────────────
-const LS_KEY = 'ap_vila_monteiro_v1';
-
-function saveData() {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify({ fixos, moveis, nid }));
-  } catch(e) {}
-}
-
-function loadData() {
-  // 1) try URL hash first (shared link)
-  try {
-    const hash = location.hash.slice(1);
-    if (hash) {
-      const parsed = JSON.parse(decodeURIComponent(atob(hash)));
-      if (parsed.fixos && parsed.moveis) {
-        fixos  = parsed.fixos;
-        moveis = parsed.moveis;
-        nid    = parsed.nid || 100;
-        // clear hash so refresh uses localStorage from now on
-        history.replaceState(null, '', location.pathname);
-        saveData();
-        return;
-      }
-    }
-  } catch(e) {}
-  // 2) try localStorage
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.fixos && parsed.moveis) {
-        fixos  = parsed.fixos;
-        moveis = parsed.moveis;
-        nid    = parsed.nid || 100;
-        return;
-      }
-    }
-  } catch(e) {}
-  // 3) use defaults already set above
-}
-
-function exportarLink() {
-  try {
-    const data = btoa(encodeURIComponent(JSON.stringify({ fixos, moveis, nid })));
-    const url  = location.href.split('#')[0] + '#' + data;
-    navigator.clipboard.writeText(url).then(() => showToast()).catch(() => {
-      prompt('Copie o link abaixo:', url);
-    });
-  } catch(e) { alert('Erro ao gerar link: ' + e.message); }
-}
-
-function showToast() {
-  const t = document.getElementById('share-toast');
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 3000);
-}
-
-// ─── helpers ───────────────────────────────────────────
+// ─── HELPERS (Mantivemos a sua lógica matemática intacta) ───
 const fmt  = v => 'R$ ' + Math.abs(v).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 const fmtS = v => (v < 0 ? '- ' : '+ ') + fmt(Math.abs(v));
 
@@ -451,7 +392,6 @@ function totalParcsM(mes) {
   }, 0);
 }
 
-// custos do mês: separados em fixos recorrentes, inesperados (só mês 1) e parcelas normais
 function custosMes(mes) {
   const fr  = totalFixRec();
   const ines = mes === 1 ? (totalFixUni() + totalAvista()) : 0;
@@ -459,28 +399,27 @@ function custosMes(mes) {
   return { fr, ines, pc, tot: fr + ines + pc };
 }
 
-// Orçamento real de móveis = margem do mês 2 em diante × número de meses
-// mês 2+ = sem inesperados, só fixos rec + parcelas
-// margem = ENTRADA - fixos recorrentes  (parcelas são oq estamos calculando, então margem bruta)
 function orcMoveis() {
   const mar  = ENTRADA - totalFixRec();
-  const maxP = Math.max(1, ...moveis.filter(m => !m.av).map(m => m.p));
-  // subtract mês 1 por ser atípico — usamos meses 2 em diante
-  const mesesValidos = maxP; // já que o 1º mês não conta pro orçamento de parcelamento
-  return { mar, maxP: mesesValidos, tot: mar * mesesValidos };
+  const maxP = moveis.length > 0 ? Math.max(1, ...moveis.filter(m => !m.av).map(m => m.p)) : 1;
+  return { mar, maxP, tot: mar * maxP };
 }
 
-// ─── tabs ───────────────────────────────────────────────
-function showTab(id) {
+// ─── TABS & UI (Exportados para o window) ───
+window.showTab = function(id) {
   const ids = ['resumo','grafico','moveis','fixos','parcelas'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ids[i]===id));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   renderAll();
 }
-function changeMonth(d) { curMes = Math.max(1, Math.min(24, curMes+d)); renderResumo(); }
 
-// ─── RESUMO ─────────────────────────────────────────────
+window.changeMonth = function(d) { 
+  curMes = Math.max(1, Math.min(24, curMes+d)); 
+  renderResumo(); 
+}
+
+// ─── RENDER FUNCTIONS ───
 function renderResumo() {
   const mes = curMes;
   document.getElementById('rml').textContent = 'Mês ' + mes;
@@ -489,11 +428,8 @@ function renderResumo() {
   const saldo  = ENTRADA - tot;
   const porPessoa = tot / N_PESSOAS;
   const orc = orcMoveis();
+  const parcM2 = totalParcsM(2);
 
-  // parcela do mês 1 (inclui à vista)
-  const parcM1 = totalParcsM(1) + totalAvista();
-
-  // gastos inesperados card
   const gicB = document.getElementById('gic-block');
   if (mes === 1 && ines > 0) {
     gicB.style.display = 'block';
@@ -511,7 +447,6 @@ function renderResumo() {
     gicB.style.display = 'none';
   }
 
-  // hero card
   const heroVal = document.getElementById('r-total-mes');
   heroVal.textContent = fmt(tot);
   heroVal.className = 'hero-value ' + (tot > ENTRADA ? 'red' : tot > ENTRADA*.9 ? 'yellow' : 'green');
@@ -543,10 +478,9 @@ function renderResumo() {
 
   document.getElementById('r-orc').textContent = fmt(orc.tot);
   document.getElementById('r-orc-s').textContent = `margem ${fmt(orc.mar)} × ${orc.maxP} meses`;
-  document.getElementById('r-parc-media').textContent = fmt(parcM1);
-  document.getElementById('r-parc-media-s').textContent = `meses 1 a ${orc.maxP}`;
+  document.getElementById('r-parc-media').textContent = fmt(parcM2);
+  document.getElementById('r-parc-media-s').textContent = `meses 2 a ${orc.maxP}`;
 
-  // alert
   const al = document.getElementById('r-alert');
   if (mes === 1 && saldo < 0) {
     al.style.display='block'; al.className='al danger';
@@ -561,7 +495,6 @@ function renderResumo() {
     al.style.display='none';
   }
 
-  // detalhe
   let rows = '';
   fixos.forEach(f => {
     if (f.tipo==='unico' && mes!==1) return;
@@ -584,7 +517,6 @@ function renderResumo() {
   rows += `<tr class="tr"><td>TOTAL</td><td></td><td style="color:${tot>ENTRADA?'var(--red)':'var(--text)'}">${fmt(tot)}</td><td style="color:${porPessoa>1200?'var(--red)':porPessoa>1100?'var(--yellow)':'var(--green)'}; font-family:'Syne',sans-serif">${fmt(porPessoa)}</td></tr>`;
   document.getElementById('tbody-det').innerHTML = rows;
 
-  // badge
   const b = document.getElementById('hbadge');
   const { tot:t1 } = custosMes(1);
   const pp1 = t1/N_PESSOAS;
@@ -592,7 +524,6 @@ function renderResumo() {
   else { b.textContent='🟢 OK'; b.style.background='#15803d'; }
 }
 
-// ─── GRÁFICO ────────────────────────────────────────────
 function renderGrafico() {
   const lbs = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const frA=[], inesA=[], pcA=[], tots=[];
@@ -602,21 +533,24 @@ function renderGrafico() {
     frA.push(fr); inesA.push(ines); pcA.push(pc); tots.push(tot);
   }
 
-  const maxT=Math.max(...tots), minT=Math.min(...tots);
+  const maxT=tots.length > 0 ? Math.max(...tots) : 0;
+  const minT=tots.length > 0 ? Math.min(...tots) : 0;
   const maxI=tots.indexOf(maxT), minI=tots.indexOf(minT);
   const okC=tots.filter(t=>t<=ENTRADA).length;
 
-  document.getElementById('g-max').textContent=fmt(maxT); document.getElementById('g-max-s').textContent=lbs[maxI];
-  document.getElementById('g-min').textContent=fmt(minT); document.getElementById('g-min-s').textContent=lbs[minI];
+  document.getElementById('g-max').textContent=fmt(maxT); 
+  if(maxI >= 0) document.getElementById('g-max-s').textContent=lbs[maxI];
+  document.getElementById('g-min').textContent=fmt(minT); 
+  if(minI >= 0) document.getElementById('g-min-s').textContent=lbs[minI];
   document.getElementById('g-ok').textContent=okC+' / 12';
 
   let rows='';
   for (let i=0; i<12; i++) {
     const mes=i+1, { fr, ines, pc, tot }=custosMes(mes);
-    const saldo=ENTRADA-tot, pp=tot/N_PESSOAS;
+    const pp=tot/N_PESSOAS;
     const sc=tot>ENTRADA?'pover':tot>ENTRADA*.9?'pwarn':'pok';
     const st=tot>ENTRADA?'estouro':tot>ENTRADA*.9?'apertado':'ok';
-    rows+=`<tr style="cursor:pointer" onclick="curMes=${mes};showTab('resumo')">
+    rows+=`<tr style="cursor:pointer" onclick="window.showTab('resumo'); curMes=${mes};">
       <td style="font-family:'Syne',sans-serif;font-weight:600">${lbs[i]}</td>
       <td>${fmt(fr)}</td>
       <td style="color:${ines>0?'var(--accent2)':'var(--muted)'}">${ines>0?fmt(ines):'–'}</td>
@@ -644,24 +578,12 @@ function renderGrafico() {
     options: {
       responsive:true, maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          backgroundColor:'#1e1e28', borderColor:'#2e2e3e', borderWidth:1,
-          titleColor:'#e8e8f0', bodyColor:'#a0a0c0',
-          titleFont:{family:'Syne',weight:'700'},
-          callbacks:{ label: c => ` ${c.dataset.label}: R$ ${c.parsed.y.toFixed(2).replace('.',',')}` }
-        }
-      },
-      scales:{
-        x:{ stacked:true, grid:{color:'rgba(46,46,62,.5)'}, ticks:{color:'#7070a0',font:{family:'DM Mono',size:11}} },
-        y:{ stacked:true, grid:{color:'rgba(46,46,62,.5)'}, ticks:{color:'#7070a0',font:{family:'DM Mono',size:11}, callback:v=>'R$'+v.toLocaleString('pt-BR')} }
-      }
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1e1e28', borderColor:'#2e2e3e', borderWidth:1, titleColor:'#e8e8f0', bodyColor:'#a0a0c0', titleFont:{family:'Syne',weight:'700'}, callbacks:{ label: c => ` ${c.dataset.label}: R$ ${c.parsed.y.toFixed(2).replace('.',',')}` } } },
+      scales:{ x:{ stacked:true, grid:{color:'rgba(46,46,62,.5)'}, ticks:{color:'#7070a0',font:{family:'DM Mono',size:11}} }, y:{ stacked:true, grid:{color:'rgba(46,46,62,.5)'}, ticks:{color:'#7070a0',font:{family:'DM Mono',size:11}, callback:v=>'R$'+v.toLocaleString('pt-BR')} } }
     }
   });
 }
 
-// ─── MÓVEIS ─────────────────────────────────────────────
 function renderMoveis() {
   let ti=0,te=0,tp=0,tpm=0, rows='';
   moveis.forEach(m => {
@@ -672,7 +594,8 @@ function renderMoveis() {
     const ds=m.enc>0&&m.ideal>0?`<span style="color:${diff>0?'var(--red)':'var(--green)'};font-size:.67rem">${diff>=0?'+':'-'}${fmt(Math.abs(diff))}</span>`:'';
     const st=m.comp?'<span class="pok">✓ comprado</span>':m.enc>m.ideal&&m.ideal>0?'<span class="pover">acima</span>':m.enc>0?'<span class="pwarn">cotado</span>':'<span style="color:var(--muted);font-size:.67rem">pendente</span>';
     const ptxt=m.av?'<span class="ponce">à vista</span>':`${m.p}× ${fmt(pv)}`;
-    rows+=`<tr><td>${m.nome}</td><td style="color:var(--muted)">${m.ideal>0?fmt(m.ideal):'–'}</td><td>${m.enc>0?fmt(m.enc):'–'} ${ds}</td><td>${m.pago>0?fmt(m.pago):'–'}</td><td style="color:var(--muted);font-size:.69rem">${m.p}× ${m.j>0?`(${(m.j*100).toFixed(2)}%)`:''}</td><td>${ptxt}</td><td>${st}</td><td><button class="btn bd bsm" onclick="removeMovel(${m.id})">✕</button></td></tr>`;
+    // ATENÇÃO: As aspas simples em '${m.id}' são necessárias pois os IDs agora são strings do Firebase
+    rows+=`<tr><td>${m.nome}</td><td style="color:var(--muted)">${m.ideal>0?fmt(m.ideal):'–'}</td><td>${m.enc>0?fmt(m.enc):'–'} ${ds}</td><td>${m.pago>0?fmt(m.pago):'–'}</td><td style="color:var(--muted);font-size:.69rem">${m.p}× ${m.j>0?`(${(m.j*100).toFixed(2)}%)`:''}</td><td>${ptxt}</td><td>${st}</td><td><button class="btn bd bsm" onclick="window.removeMovel('${m.id}')">✕</button></td></tr>`;
   });
   document.getElementById('tbody-moveis').innerHTML = rows;
   document.getElementById('tm-i').textContent=fmt(ti);
@@ -695,7 +618,8 @@ function renderMoveis() {
   pb.className='pb '+(pct>100?'pbover':pct>80?'pbwarn':'pbok');
 }
 
-function addMovel() {
+// 5. Enviando dados para o Firebase em vez do Array local
+window.addMovel = function() {
   const nome=document.getElementById('m-nome').value.trim();
   if (!nome){alert('Informe o nome!');return;}
   const ideal=parseFloat(document.getElementById('m-ideal').value)||0;
@@ -707,52 +631,60 @@ function addMovel() {
   const comp=document.getElementById('m-comp').checked;
   const pago=parseFloat(document.getElementById('m-pago').value)||0;
   const av=document.getElementById('m-av').checked;
-  moveis.push({id:nid++,nome,ideal,enc,pago,comp,p,j,av});
+  
+  // Salva na nuvem!
+  push(ref(db, 'moveis'), {nome,ideal,enc,pago,comp,p,j,av});
+  
   ['m-nome','m-ideal','m-enc2','m-pago'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m-comp').checked=false;
   document.getElementById('m-av').checked=false;
-  saveData();
-  renderAll();
 }
-function removeMovel(id){moveis=moveis.filter(m=>m.id!==id);saveData();renderAll();}
+
+window.removeMovel = function(id) {
+  remove(ref(db, `moveis/${id}`)); // Remove da nuvem
+}
+
 document.getElementById('m-p').addEventListener('change',function(){document.getElementById('m-pc-w').style.display=this.value==='custom'?'flex':'none';});
 document.getElementById('m-j').addEventListener('change',function(){document.getElementById('m-jc-w').style.display=this.value==='custom'?'flex':'none';});
 
-// ─── FIXOS ──────────────────────────────────────────────
 function renderFixos() {
   let tot=0, rows='';
   fixos.forEach(f => {
     if (f.tipo==='recorrente') tot+=f.valor;
     const tag=f.tipo==='unico'?'<span class="ponce">só 1º mês</span>':'<span class="pok">todo mês</span>';
-    rows+=`<tr><td>${f.nome}</td><td>${fmt(f.valor)}</td><td>${tag}</td><td><button class="btn bd bsm" onclick="removeFixo(${f.id})">✕</button></td></tr>`;
+    rows+=`<tr><td>${f.nome}</td><td>${fmt(f.valor)}</td><td>${tag}</td><td><button class="btn bd bsm" onclick="window.removeFixo('${f.id}')">✕</button></td></tr>`;
   });
   document.getElementById('tbody-fixos').innerHTML = rows;
   document.getElementById('tf-tot').textContent = fmt(tot);
 }
-function addFixo() {
+
+window.addFixo = function() {
   const nome=document.getElementById('f-nome').value.trim();
   const valor=parseFloat(document.getElementById('f-val').value)||0;
   const tipo=document.getElementById('f-tipo').value;
   if (!nome||valor<=0){alert('Informe descrição e valor!');return;}
-  fixos.push({id:nid++,nome,valor,tipo});
+  
+  // Salva na nuvem!
+  push(ref(db, 'fixos'), {nome, valor, tipo});
+  
   document.getElementById('f-nome').value='';
   document.getElementById('f-val').value='';
-  saveData();
-  renderAll();
 }
-function removeFixo(id){fixos=fixos.filter(f=>f.id!==id);saveData();renderAll();}
 
-// ─── PARCELAS ───────────────────────────────────────────
+window.removeFixo = function(id) {
+  remove(ref(db, `fixos/${id}`)); // Remove da nuvem
+}
+
 function renderParcelas() {
-  const maxM=Math.max(12,...moveis.filter(m=>!m.av).map(m=>m.p));
+  const maxM=moveis.length > 0 ? Math.max(12,...moveis.filter(m=>!m.av).map(m=>m.p)) : 12;
   let rows='';
   for (let mes=1; mes<=Math.min(maxM,18); mes++) {
     const { fr, ines, pc, tot }=custosMes(mes);
-    const saldo=ENTRADA-tot, pp=tot/N_PESSOAS;
+    const pp=tot/N_PESSOAS;
     const isCur=mes===curMes;
     const sc=tot>ENTRADA?'pover':tot>ENTRADA*.9?'pwarn':'pok';
     const st=tot>ENTRADA?'estouro':tot>ENTRADA*.9?'apertado':'ok';
-    rows+=`<tr style="cursor:pointer;${isCur?'background:rgba(124,109,240,.08)':''}" onclick="curMes=${mes};showTab('resumo')">
+    rows+=`<tr style="cursor:pointer;${isCur?'background:rgba(124,109,240,.08)':''}" onclick="window.showTab('resumo'); curMes=${mes};">
       <td style="font-family:'Syne',sans-serif;font-weight:${isCur?'700':'400'};color:${isCur?'var(--accent)':'inherit'}">Mês ${mes}${isCur?' ◀':''}</td>
       <td style="color:var(--muted)">${fmt(fr)}</td>
       <td style="color:${ines>0?'var(--accent2)':'var(--muted)'}">${ines>0?fmt(ines):'–'}</td>
@@ -765,9 +697,15 @@ function renderParcelas() {
   document.getElementById('tbody-parc').innerHTML = rows;
 }
 
-// ─── RENDER ALL ─────────────────────────────────────────
-function renderAll(){renderResumo();renderGrafico();renderMoveis();renderFixos();renderParcelas();}
-loadData();
+function renderAll(){
+  renderResumo();
+  renderGrafico();
+  renderMoveis();
+  renderFixos();
+  renderParcelas();
+}
+
+// O primeiro render agora não tem dados chumbados, vai carregar zerado até o Firebase devolver as informações em menos de um segundo!
 renderAll();
 </script>
 </body>
